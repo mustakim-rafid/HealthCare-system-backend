@@ -21,6 +21,7 @@ router
 router
   .route("/create-doctor")
   .post(
+    checkAuth(Role.ADMIN),
     fileUploader.upload.single("file"),
     zodValidator(userInputZodSchema.doctorInputZodSchema),
     userController.createDoctor
@@ -29,6 +30,7 @@ router
 router
   .route("/create-admin")
   .post(
+    checkAuth(Role.ADMIN),
     fileUploader.upload.single("file"),
     zodValidator(userInputZodSchema.adminInputZodSchema),
     userController.createAdmin

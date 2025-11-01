@@ -17,5 +17,6 @@ export default {
   refresh_token_secret: process.env.REFRESH_TOKEN_SECRET,
   refresh_token_expiry: process.env.REFRESH_TOKEN_EXPIRY,
   stripe_secret_key: process.env.STRIPE_SECRET_KEY,
-  stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET
+  stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+  openrouter_api_key: process.env.OPENROUTER_API_KEY
 };

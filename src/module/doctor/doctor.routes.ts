@@ -14,11 +14,15 @@ router.route("/").get(
     checkAuth(Role.ADMIN, Role.DOCTOR, Role.PATIENT),
     doctorController.getAllDoctors
 )
+
 router.route("/").patch(
     checkAuth(Role.DOCTOR),
     doctorController.updateDoctor
 )
 
 // ******************* AI Driven Doctor Suggestion  ********************************
+router.route("/suggestion").post(
+    doctorController.doctorSuggestion
+)
 
 export const doctorRoutes = router
