@@ -9,6 +9,7 @@ import {
 import { Prisma, Role, Status } from "@prisma/client";
 import { searchableFields } from "./user.constants";
 import { TUserJwtPayload } from "../../types";
+import config from "../../config";
 
 const createAdmin = async (req: Request) => {
   if (req.file) {
@@ -16,7 +17,7 @@ const createAdmin = async (req: Request) => {
     req.body.admin.profilePhoto = uploadResponse?.secure_url;
   }
 
-  const hashPassword = await bcrypt.hash(req.body.password, 10);
+  const hashPassword = await bcrypt.hash(req.body.password, Number(config.bcrypt_salt_round));
 
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
@@ -46,7 +47,7 @@ const createPatient = async (req: Request) => {
     req.body.patient.profilePhoto = uploadResponse?.secure_url;
   }
 
-  const hashPassword = await bcrypt.hash(req.body.password, 10);
+  const hashPassword = await bcrypt.hash(req.body.password, Number(config.bcrypt_salt_round));
 
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
@@ -76,7 +77,7 @@ const createDoctor = async (req: Request) => {
     req.body.doctor.profilePhoto = uploadResponse?.secure_url;
   }
 
-  const hashPassword = await bcrypt.hash(req.body.password, 10);
+  const hashPassword = await bcrypt.hash(req.body.password, Number(config.bcrypt_salt_round));
 
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
@@ -150,7 +151,10 @@ const getAllUsersFromDB = async (
     orderBy: {
       [sortBy]: sortOrder,
     },
-    where: whereConditions
+    where: whereConditions,
+    include: {
+      patient: true
+    }
   });
 
   const total = await prisma.user.count({

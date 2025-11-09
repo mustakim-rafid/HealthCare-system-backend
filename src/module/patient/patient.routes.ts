@@ -5,6 +5,10 @@ import { Role } from "@prisma/client";
 
 const router = Router()
 
+router.route("/").get(
+    checkAuth(Role.ADMIN),
+    patientController.getAllPatients
+)
 router.route("/:id").get(patientController.getPatientById)
 router.route("/").patch(
     checkAuth(Role.PATIENT),

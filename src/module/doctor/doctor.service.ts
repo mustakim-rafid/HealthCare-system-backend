@@ -194,7 +194,8 @@ const doctorSuggestion = async (patientSymptoms: string) => {
   {
     "suggestedDoctor": "Doctor Name",
     "specialization": "Doctor Specialization",
-    "reason": "Why this doctor fits best"
+    "reason": "Why this doctor fits best",
+    "rating": "doctor's average rating"
   }[]
   `;
 

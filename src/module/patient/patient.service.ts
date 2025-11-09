@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client"
+import { IPaginationParameters, normalizeQueryParams } from "../../helper/normalizeQueryParams"
 import { TUserJwtPayload } from "../../types"
 import { prisma } from "../../utils/prisma"
 
@@ -9,6 +11,51 @@ const getPatientById = async (id: string) => {
     })
 
     return patient
+}
+
+const getAllPatients = async (filters: any, options: Partial<IPaginationParameters>) => {
+    const { take, skip, page, sortBy, sortOrder } = normalizeQueryParams(options)
+    const { searchTerm, ...filterData } = filters
+
+    const andConditions: Prisma.PaitentWhereInput[] = []
+    
+    if (searchTerm && searchTerm.length > 0) {
+        andConditions.push({
+            OR: ["name", "email"].map(item => ({
+                [item]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: filterData[key]
+            }))
+        })
+    }
+
+    const whereConditions: Prisma.PaitentWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
+
+    const result = await prisma.paitent.findMany({
+        take,
+        skip,
+        orderBy: {
+            [sortBy]: sortOrder
+        },
+        where: whereConditions,
+        include: {
+            patientHealthData: true,
+            appointment: true
+        }
+    })
+
+    return result
 }
 
 const updatePatient = async (user: TUserJwtPayload, payload: any) => {
@@ -63,5 +110,6 @@ const updatePatient = async (user: TUserJwtPayload, payload: any) => {
 
 export const patientService = {
     getPatientById,
-    updatePatient
+    updatePatient,
+    getAllPatients
 }

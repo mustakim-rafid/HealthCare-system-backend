@@ -42,6 +42,12 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
   const result = await authService.refreshToken(token);
+  res.cookie("accessToken", result.accessToken, {
+    secure: true,
+    httpOnly: true,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60,
+  });
   sendResponse(res, {
     statusCode: httpStatus.OK,
     message: "Token refreshed successfully",
@@ -50,8 +56,19 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await authService.changePassword(req.user, req.body.oldPassword, req.body.newPassword)
+    sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Password changed successfully",
+    success: true,
+    data: result,
+  });
+})
+
 export const authController = {
   login,
   getMe,
-  refreshToken
+  refreshToken,
+  changePassword
 };

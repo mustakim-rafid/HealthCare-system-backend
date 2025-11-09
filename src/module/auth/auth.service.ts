@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import { generateToken, verifyToken } from "../../helper/jwt";
 import getEnvs from "../../config";
 import config from "../../config";
+import { TUserJwtPayload } from "../../types";
 
 const login = async (payload: { email: string; password: string }) => {
   const isUserExists = await prisma.user.findUnique({
@@ -113,8 +114,38 @@ const refreshToken = async (refreshToken: string) => {
   };
 };
 
+const changePassword = async (user: TUserJwtPayload, oldPassword: string, newPassword: string) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user.email,
+      status: Status.ACTIVE
+    }
+  })
+
+  const isOldPasswordCorrect = await bcrypt.compare(oldPassword, userData.password)
+
+  if (!isOldPasswordCorrect) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Old password is incorrect")
+  }
+
+  const hashPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_round))
+
+  const userWithNewPassword = await prisma.user.update({
+    where: {
+      email: user.email,
+      status: Status.ACTIVE
+    },
+    data: {
+      password: hashPassword
+    } 
+  })
+
+  return userWithNewPassword
+}
+
 export const authService = {
   login,
   getMe,
   refreshToken,
+  changePassword
 };
