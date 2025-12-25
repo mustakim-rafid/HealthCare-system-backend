@@ -63,30 +63,30 @@ const createAppointment = async (
       },
     });
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      customer_email: patient.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "bdt",
-            product_data: { name: `Appointment with ${doctor.name}` },
-            unit_amount: doctor.appointmentFee * 100,
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        appointmentId: appointment.id,
-        paymentId: payment.id,
-      },
-      mode: "payment",
-      success_url: "https://web.programming-hero.com",
-      cancel_url: "https://nextjs.org",
-    });
+    // const session = await stripe.checkout.sessions.create({
+    //   payment_method_types: ["card"],
+    //   customer_email: patient.email,
+    //   line_items: [
+    //     {
+    //       price_data: {
+    //         currency: "bdt",
+    //         product_data: { name: `Appointment with ${doctor.name}` },
+    //         unit_amount: doctor.appointmentFee * 100,
+    //       },
+    //       quantity: 1,
+    //     },
+    //   ],
+    //   metadata: {
+    //     appointmentId: appointment.id,
+    //     paymentId: payment.id,
+    //   },
+    //   mode: "payment",
+    //   success_url: "https://web.programming-hero.com",
+    //   cancel_url: "https://nextjs.org",
+    // });
 
     return {
-      paymentUrl: session.url,
+      paymentUrl: true,
     };
   });
 };

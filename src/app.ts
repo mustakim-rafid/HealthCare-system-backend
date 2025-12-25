@@ -13,11 +13,11 @@ app.use(cors({
     credentials: true
 }));
 
-app.post(
-  "/api/v1/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  paymentController.paymentVerification
-)
+// app.post(
+//   "/api/v1/webhook",
+//   bodyParser.raw({ type: "application/json" }),
+//   paymentController.paymentVerification
+// )
 
 //parser
 app.use(express.json());
