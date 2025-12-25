@@ -7,7 +7,6 @@ import { fileUploader } from "../../helper/fileUploader";
 const router = Router()
 
 router.route("/").get(
-    checkAuth(Role.ADMIN, Role.DOCTOR),
     specialityController.getAllSpecialities
 )
 
@@ -15,6 +14,11 @@ router.route("/").post(
     checkAuth(Role.ADMIN),
     fileUploader.upload.single("icon"),
     specialityController.createSpeciality
+)
+
+router.route("/:id").delete(
+    checkAuth(Role.ADMIN),
+    specialityController.deleteSpeciality
 )
 
 export const specialityRoutes = router

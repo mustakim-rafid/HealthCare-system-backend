@@ -6,18 +6,26 @@ import { Role } from "@prisma/client";
 const router = Router()
 
 router.route("/:id").get(
-    checkAuth(Role.ADMIN, Role.DOCTOR, Role.PATIENT),
     doctorController.getDoctorById
 )
 
 router.route("/").get(
-    checkAuth(Role.ADMIN, Role.DOCTOR, Role.PATIENT),
     doctorController.getAllDoctors
 )
 
-router.route("/").patch(
-    checkAuth(Role.DOCTOR),
+router.route("/:id").patch(
+    checkAuth(Role.ADMIN, Role.DOCTOR),
     doctorController.updateDoctor
+)
+
+router.route("/:id").delete(
+    checkAuth(Role.ADMIN),
+    doctorController.deleteDoctor
+)
+
+router.route("/soft-delete/:id").delete(
+    checkAuth(Role.ADMIN),
+    doctorController.softDeleteDoctor
 )
 
 // ******************* AI Driven Doctor Suggestion  ********************************

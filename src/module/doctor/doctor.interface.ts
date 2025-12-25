@@ -11,7 +11,7 @@ export interface IUpdateDoctorPayload {
     currentWorkingPlace?: string;
     designation?: string;
     specialities?: {
-        specialityId: string;
-        deleteFlag?: boolean;
+      specialityId: string;
+      deleteFlag?: boolean;
     }[];
 }

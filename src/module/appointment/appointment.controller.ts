@@ -38,8 +38,39 @@ const updateAppointmentStatus = catchAsync(async (req: Request, res: Response) =
   });
 })
 
+const getMyAppointment = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    const filters = pick(req.query, ['status', 'paymentStatus']);
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
+    const result = await appointmentService.getMyAppointment(user, filters, options);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'My Appointment retrive successfully',
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+const createAppointmentWithPayLater = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+
+    const result = await appointmentService.createAppointmentWithPayLater(user, req.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Appointment booked successfully! You can pay later.",
+        data: result
+    })
+});
+
 export const appointmentController = {
   createAppointment,
   getAllAppointments,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  getMyAppointment,
+  createAppointmentWithPayLater
 }

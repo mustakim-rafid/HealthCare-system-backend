@@ -19,5 +19,9 @@ export default {
   stripe_secret_key: process.env.STRIPE_SECRET_KEY,
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
   openrouter_api_key: process.env.OPENROUTER_API_KEY,
-  bcrypt_salt_round: process.env.BCRYPT_SALT_ROUND
+  bcrypt_salt_round: process.env.BCRYPT_SALT_ROUND,
+  super_admin: {
+    email: process.env.SUPER_ADMIN_EMAIL,
+    password: process.env.SUPER_ADMIN_PASSWORD
+  },
 };

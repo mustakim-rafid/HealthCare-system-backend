@@ -24,7 +24,8 @@ const doctorInputZodSchema = z.object({
     appointmentFee: z.number(),
     qualification: z.string().nonempty("Qualification is required"),
     currentWorkingPlace: z.string().nonempty("Current working place is required"),
-    designation: z.string().nonempty("Designation is required")
+    designation: z.string().nonempty("Designation is required"),
+    specialities: z.array(z.string()).min(1, "At least one speciality is required")
   }),
 });
 

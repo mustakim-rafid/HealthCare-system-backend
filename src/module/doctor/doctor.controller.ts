@@ -30,7 +30,7 @@ const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateDoctor = catchAsync(async (req: Request, res: Response) => {
-  const result = await doctorService.updateDoctor(req.body, req.user)
+  const result = await doctorService.updateDoctor(req.body, req.params.id)
   sendResponse(res, {
     statusCode: httpStatus.OK,
     message: "Doctor updated successfully",
@@ -38,6 +38,26 @@ const updateDoctor = catchAsync(async (req: Request, res: Response) => {
     data: result
   });
 });
+
+const deleteDoctor = catchAsync(async (req: Request, res: Response) => {
+  const result = await doctorService.deleteDoctor(req.params.id)
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Doctor deleted successfully",
+    success: true,
+    data: result
+  });
+})
+
+const softDeleteDoctor = catchAsync(async (req: Request, res: Response) => {
+  const result = await doctorService.softDeleteDoctor(req.params.id)
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Doctor deleted successfully",
+    success: true,
+    data: result
+  });
+})
 
 const doctorSuggestion = catchAsync(async (req: Request, res: Response) => {
   const result = await doctorService.doctorSuggestion(req.body.symptoms)
@@ -53,5 +73,7 @@ export const doctorController = {
   getAllDoctors,
   updateDoctor,
   getDoctorById,
+  deleteDoctor,
+  softDeleteDoctor,
   doctorSuggestion
 };

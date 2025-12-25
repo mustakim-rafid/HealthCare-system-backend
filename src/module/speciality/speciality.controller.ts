@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { specialityService } from "./speciality.service";
-import httpStatus from "http-status"
+import httpStatus from "http-status";
 
 const createSpeciality = catchAsync(async (req: Request, res: Response) => {
   const result = await specialityService.createSpeciality(req);
@@ -15,8 +15,8 @@ const createSpeciality = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllSpecialities = catchAsync(async (req: Request, res: Response) => {
-  const result = await specialityService.getAllSpecialities()
-    sendResponse(res, {
+  const result = await specialityService.getAllSpecialities();
+  sendResponse(res, {
     statusCode: httpStatus.OK,
     message: "Specialities retrieved successfully",
     success: true,
@@ -24,7 +24,18 @@ const getAllSpecialities = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteSpeciality = catchAsync(async (req: Request, res: Response) => {
+  const result = await specialityService.deleteSpeciality(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Speciality deleted successfully",
+    success: true,
+    data: result,
+  });
+});
+
 export const specialityController = {
   createSpeciality,
-  getAllSpecialities
-}
+  getAllSpecialities,
+  deleteSpeciality
+};

@@ -1,12 +1,18 @@
 import { Server } from 'http';
 import app from './app';
 import config from './config';
+import { seedAdmin } from './helper/seedAdmin';
+import { prisma } from './utils/prisma';
 
 async function bootstrap() {
     // This variable will hold our server instance
     let server: Server;
 
     try {
+        await prisma.$connect();
+
+        await seedAdmin()
+
         // Start the server
         server = app.listen(config.port, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);

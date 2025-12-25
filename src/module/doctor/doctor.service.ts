@@ -9,6 +9,7 @@ import { TUserJwtPayload } from "../../types";
 import { IUpdateDoctorPayload } from "./doctor.interface";
 import { openai } from "../../helper/open-router";
 import { formatAIResponseToJSON } from "../../helper/jsonFormatter";
+import { attachDoctorInfo } from "../../helper/attachDoctorInfo";
 
 const getDoctorById = async (id: string) => {
   const data = await prisma.doctor.findUniqueOrThrow({
@@ -92,6 +93,16 @@ const getAllDoctors = async (
           speciality: true,
         },
       },
+      doctorSchedule: {
+        include: {
+          schedule: true
+        }
+      },
+      user: {
+        select: {
+          status: true
+        }
+      }
     },
   });
 
@@ -111,11 +122,11 @@ const getAllDoctors = async (
 
 const updateDoctor = async (
   payload: IUpdateDoctorPayload,
-  user: TUserJwtPayload
+  id: string
 ) => {
   const doctorInfo = await prisma.doctor.findUniqueOrThrow({
     where: {
-      email: user.email,
+      id
     },
   });
 
@@ -144,7 +155,7 @@ const updateDoctor = async (
 
     return await prisma.doctor.update({
       where: {
-        email: user.email,
+        id
       },
       data: updateableFields,
     });
@@ -152,6 +163,37 @@ const updateDoctor = async (
 
   return result;
 };
+
+const deleteDoctor = async (id: string) => {
+  return await prisma.$transaction(async (tnx) => {
+    const doctor = await tnx.doctor.delete({
+      where: {
+        id
+      }
+    })
+
+    await tnx.user.delete({
+      where: {
+        email: doctor.email
+      }
+    })
+
+    return doctor
+  })
+}
+
+const softDeleteDoctor = async (id: string) => {
+  const result = await prisma.doctor.update({
+    where: {
+      id
+    },
+    data: {
+      isDeleted: true
+    }
+  })
+
+  return result
+}
 
 const doctorSuggestion = async (patientSymptoms: string) => {
   const doctors = await prisma.doctor.findMany({
@@ -218,12 +260,16 @@ const doctorSuggestion = async (patientSymptoms: string) => {
 
   const jsonResponse = formatAIResponseToJSON(aiResponse as string)
 
-  return jsonResponse;
+  const jsonResponseWithDoctorInfo = await attachDoctorInfo(jsonResponse)
+
+  return jsonResponseWithDoctorInfo;
 };
 
 export const doctorService = {
   getAllDoctors,
   updateDoctor,
   getDoctorById,
+  deleteDoctor,
+  softDeleteDoctor,
   doctorSuggestion,
 };

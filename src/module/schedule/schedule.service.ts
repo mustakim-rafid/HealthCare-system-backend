@@ -1,11 +1,14 @@
-import { IScheduleFilterQueries, ISchedulePayload } from "../../types/common";
+import {
+  IScheduleFilterQueries,
+  ISchedulePayload,
+} from "../schedule/schedule.interface";
 import { addHours, addMinutes } from "date-fns";
 import { prisma } from "../../utils/prisma";
 import {
   IPaginationParameters,
   normalizeQueryParams,
 } from "../../helper/normalizeQueryParams";
-import { Prisma, Role } from "@prisma/client";
+import { Prisma, Role, Schedule } from "@prisma/client";
 import { TUserJwtPayload } from "../../types";
 
 const createSchedule = async (payload: ISchedulePayload) => {
@@ -139,17 +142,38 @@ const getAllAvailableSchedules = async (
 };
 
 const deleteScheduleById = async (id: string) => {
-  const data = await prisma.schedule.delete({
-    where: {
-      id
-    }
-  })
+  return prisma.$transaction(async (tnx) => {
+    const schedule = await prisma.schedule.delete({
+      where: {
+        id,
+      },
+    });
 
-  return data
-}
+    if (schedule.id) {
+      await prisma.doctorSchedule.deleteMany({
+        where: {
+          scheduleId: schedule.id
+        }
+      })
+    }
+
+    return schedule
+  });
+};
+
+const getByIdFromDB = async (id: string): Promise<Schedule | null> => {
+    const result = await prisma.schedule.findUnique({
+        where: {
+            id,
+        },
+    });
+
+    return result;
+};
 
 export const scheduleService = {
   createSchedule,
   getAllAvailableSchedules,
-  deleteScheduleById
+  deleteScheduleById,
+  getByIdFromDB
 };

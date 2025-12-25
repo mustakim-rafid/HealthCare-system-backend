@@ -68,10 +68,16 @@ const getMe = async (token: string) => {
       email: decodedToken.email,
       status: Status.ACTIVE,
     },
+    include: {
+      admin: true,
+      doctor: true,
+      patient: true
+    }
   });
 
   return {
     id: user.id,
+    name: user?.admin?.name || user?.doctor?.name || user?.patient?.name,
     email: user.email,
     role: user.role,
     status: user.status,
@@ -137,7 +143,7 @@ const changePassword = async (user: TUserJwtPayload, oldPassword: string, newPas
     },
     data: {
       password: hashPassword
-    } 
+    }
   })
 
   return userWithNewPassword
