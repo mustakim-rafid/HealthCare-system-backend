@@ -11,7 +11,7 @@ Patients find doctors, book a time slot, pay with Stripe, get reminders and join
 
 | Area | What it does |
 | --- | --- |
-| Scheduling | Admin creates 30-minute slots (UTC, idempotent, no past slots). Doctors pick slots to offer; overlapping picks are rejected. |
+| Scheduling | Admin creates 30-minute slots in Bangladesh time (`APP_TIMEZONE`), stored as UTC (idempotent, no past slots). Doctors pick slots to offer; overlapping picks are rejected. |
 | Booking | Patients see only future, unbooked slots. Booking **holds** the slot (`PENDING_PAYMENT`, 30 min) and opens Stripe Checkout. Double booking is impossible (atomic slot claim + partial unique index); a patient cannot hold two overlapping appointments. |
 | Payment | Existing Stripe Checkout + webhook flow (re-enabled). Confirmation is server-verified (webhook signature on raw body, or `POST /payment/verify` from the success page), amount/currency checked, idempotent. Unpaid holds are released automatically. |
 | Lifecycle | `PENDING_PAYMENT → CONFIRMED → INPROGRESS → COMPLETED / NO_SHOW`, `CONFIRMED ⇄ POSTPONED`, any active → `CANCELLED`. Invalid transitions return 409. Finished consultations auto-complete. |
@@ -57,6 +57,7 @@ See [.env.example](.env.example). Validated at startup — the server refuses to
 | `SLOT_HOLD_MINUTES` / `CANCELLATION_CUTOFF_HOURS` / `REMINDER_MINUTES_BEFORE` | | defaults 30 / 24 / 10 |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | optional | Emails are skipped (and logged) when not set |
 | `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` | | Admin created on first boot / seed; never overwritten |
+| `APP_TIMEZONE` | | default `Asia/Dhaka`. Admin slot times are entered in this timezone; stored as UTC |
 | `SEED_DEMO_DATA`, `DEMO_*` | | Demo doctor/patient for `npm run seed`; `SEED_DEMO_DATA=false` skips them |
 
 ## API overview (`/api/v1`)
@@ -113,9 +114,8 @@ Note: the partial unique index `appointments_active_doctor_slot_key` is created 
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin | value of `SUPER_ADMIN_EMAIL` (default `admin@healthcare.dev`) | value of `SUPER_ADMIN_PASSWORD` (default `Admin@12345`) |
 | Doctor | `doctor@healthcare.dev` | `Doctor@12345` |
 | Patient | `patient@healthcare.dev` | `Patient@12345` |
 
-Change them with the env vars above or through **Change password** in the app. Demo defaults are for development only; the seed refuses to create the default admin password in production.
+The admin account is created only from the `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` environment variables (nothing is hard-coded). Demo doctor/patient credentials can be changed with the `DEMO_*` env vars or through **Change password** in the app.
 Stripe test card: `4242 4242 4242 4242`, any future date, any CVC.

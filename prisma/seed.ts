@@ -4,8 +4,8 @@
  *
  *   npm run seed
  *
- * Credentials come from env vars, with demo defaults intended for development only:
- *   SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD   (default admin@healthcare.dev / Admin@12345)
+ * Credentials come from env vars. The admin is created only when SUPER_ADMIN_EMAIL and
+ * SUPER_ADMIN_PASSWORD are set (no admin credentials are hard-coded). Demo doctor/patient defaults:
  *   DEMO_DOCTOR_EMAIL / DEMO_DOCTOR_PASSWORD   (default doctor@healthcare.dev / Doctor@12345)
  *   DEMO_PATIENT_EMAIL / DEMO_PATIENT_PASSWORD (default patient@healthcare.dev / Patient@12345)
  *   SEED_DEMO_DATA=false  → only the admin is created
@@ -18,8 +18,8 @@ const prisma = new PrismaClient();
 const rounds = Number(process.env.BCRYPT_SALT_ROUND || 10);
 
 const admin = {
-  email: process.env.SUPER_ADMIN_EMAIL || "admin@healthcare.dev",
-  password: process.env.SUPER_ADMIN_PASSWORD || "Admin@12345",
+  email: process.env.SUPER_ADMIN_EMAIL,
+  password: process.env.SUPER_ADMIN_PASSWORD,
 };
 const doctor = {
   email: process.env.DEMO_DOCTOR_EMAIL || "doctor@healthcare.dev",
@@ -40,14 +40,14 @@ const ensureUser = async (email: string, password: string, role: Role) => {
 };
 
 async function main() {
-  if (process.env.NODE_ENV === "production" && !process.env.SUPER_ADMIN_PASSWORD) {
-    throw new Error("Refusing to seed the default demo admin password in production. Set SUPER_ADMIN_PASSWORD.");
+  // Admin (only from env vars)
+  if (admin.email && admin.password) {
+    const a = await ensureUser(admin.email, admin.password, Role.ADMIN);
+    await prisma.admin.upsert({ where: { email: admin.email }, update: {}, create: { email: admin.email, name: "Super admin" } });
+    console.log(`admin   ${a.created ? "created" : "exists, unchanged"}`);
+  } else {
+    console.log("admin   skipped (set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD)");
   }
-
-  // Admin
-  const a = await ensureUser(admin.email, admin.password, Role.ADMIN);
-  await prisma.admin.upsert({ where: { email: admin.email }, update: {}, create: { email: admin.email, name: "Super admin" } });
-  console.log(`admin   ${admin.email} ${a.created ? "(created)" : "(exists, unchanged)"}`);
 
   if (process.env.SEED_DEMO_DATA === "false") return;
 
