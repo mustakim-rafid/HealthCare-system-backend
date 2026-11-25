@@ -10,6 +10,27 @@ import { Prisma, Role, Status } from "@prisma/client";
 import { searchableFields } from "./user.constants";
 import { TUserJwtPayload } from "../../types";
 import config from "../../config";
+import { z } from "zod";
+
+const baseProfile = {
+  name: z.string().trim().min(1).max(100).optional(),
+  contactNumber: z.string().trim().max(30).optional(),
+  profilePhoto: z.string().url().optional(),
+};
+const profileUpdateSchemas = {
+  ADMIN: z.object(baseProfile).strip(),
+  PATIENT: z.object({ ...baseProfile, address: z.string().trim().max(300).optional() }).strip(),
+  DOCTOR: z
+    .object({
+      ...baseProfile,
+      address: z.string().trim().max(300).optional(),
+      qualification: z.string().trim().max(200).optional(),
+      currentWorkingPlace: z.string().trim().max(200).optional(),
+      designation: z.string().trim().max(100).optional(),
+      experience: z.coerce.number().int().min(0).max(80).optional(),
+    })
+    .strip(),
+};
 
 const createAdmin = async (req: Request) => {
   if (req.file) {
@@ -230,7 +251,7 @@ const getProfileData = async (user: TUserJwtPayload) => {
     profileData = await prisma.paitent.findUniqueOrThrow({
       where: {
         email: user.email,
-        isDeleted: true
+        isDeleted: false
       }
     })
   }
@@ -255,31 +276,20 @@ const updateMyProfie = async (user: any, req: Request) => {
         req.body.profilePhoto = uploadToCloudinary?.secure_url;
     }
 
+    // Mass-assignment protection: only whitelisted, validated fields per role can be changed
+    const schema = profileUpdateSchemas[userInfo.role];
+    const data = schema.parse(req.body ?? {});
+
     let profileInfo;
 
     if (userInfo.role === Role.ADMIN) {
-        profileInfo = await prisma.admin.update({
-            where: {
-                email: userInfo.email
-            },
-            data: req.body
-        })
+        profileInfo = await prisma.admin.update({ where: { email: userInfo.email }, data })
     }
     else if (userInfo.role === Role.DOCTOR) {
-        profileInfo = await prisma.doctor.update({
-            where: {
-                email: userInfo.email
-            },
-            data: req.body
-        })
+        profileInfo = await prisma.doctor.update({ where: { email: userInfo.email }, data })
     }
     else if (userInfo.role === Role.PATIENT) {
-        profileInfo = await prisma.paitent.update({
-            where: {
-                email: userInfo.email
-            },
-            data: req.body
-        })
+        profileInfo = await prisma.paitent.update({ where: { email: userInfo.email }, data })
     }
 
     return { ...profileInfo };

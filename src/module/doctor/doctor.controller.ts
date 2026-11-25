@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { prisma } from "../../utils/prisma";
+import { AppError } from "../../utils/AppError";
 import sendResponse from "../../utils/sendResponse";
 import catchAsync from "../../utils/catchAsync";
 import { doctorService } from "./doctor.service";
@@ -30,6 +32,16 @@ const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateDoctor = catchAsync(async (req: Request, res: Response) => {
+  // Doctors may only update their own profile (admins can update anyone)
+  if (req.user.role === "DOCTOR") {
+    const self = await prisma.doctor.findUnique({ where: { email: req.user.email }, select: { id: true } });
+    if (!self || self.id !== req.params.id) throw new AppError(httpStatus.FORBIDDEN, "You can only update your own profile");
+    delete req.body.appointmentFee;
+    delete req.body.averageRating;
+    delete req.body.registrationNumber;
+  }
+  delete req.body.email;
+  delete req.body.isDeleted;
   const result = await doctorService.updateDoctor(req.body, req.params.id)
   sendResponse(res, {
     statusCode: httpStatus.OK,

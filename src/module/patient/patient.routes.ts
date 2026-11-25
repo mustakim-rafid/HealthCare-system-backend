@@ -9,7 +9,7 @@ router.route("/").get(
     checkAuth(Role.ADMIN),
     patientController.getAllPatients
 )
-router.route("/:id").get(patientController.getPatientById)
+router.route("/:id").get(checkAuth(Role.ADMIN, Role.DOCTOR), patientController.getPatientById)
 router.route("/").patch(
     checkAuth(Role.PATIENT),
     patientController.updatePatient
