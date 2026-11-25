@@ -9,13 +9,76 @@ model Appointment {
     videoCallingId String
     status         AppointmentStatus @default(SCHEDULED)
     paymentStatus  PaymentStatus     @default(UNPAID)
+    meetLink           String?
+    holdExpiresAt      DateTime?
+    confirmedAt        DateTime?
+    cancelledAt        DateTime?
+    cancelReason       String?
+    cancelledBy        Role?
+    proposedScheduleId String?
+    postponeMessage    String?
+    reminderSentAt     DateTime?
+    startingSentAt     DateTime?
+    completedAt        DateTime?
+    isDeleted          Boolean           @default(false)
     createdAt      DateTime          @default(now())
     updatedAt      DateTime          @updatedAt
     payment        Payment?
     prescription   Prescription?
     Review         Review?
+    messages       AppointmentMessage[]
 
+    @@index([doctorId])
+    @@index([patientId])
+    @@index([scheduleId])
+    @@index([status])
+    @@index([status, holdExpiresAt])
     @@map("appointments")
+}
+
+model AppointmentMessage {
+    id            String      @id @default(uuid())
+    appointmentId String
+    appointment   Appointment @relation(fields: [appointmentId], references: [id])
+    senderEmail   String
+    senderRole    Role
+    body          String
+    createdAt     DateTime    @default(now())
+
+    @@index([appointmentId, createdAt])
+    @@map("appointment_messages")
+}
+
+model Notification {
+    id            String           @id @default(uuid())
+    userEmail     String
+    type          NotificationType
+    title         String
+    message       String
+    link          String?
+    appointmentId String?
+    isRead        Boolean          @default(false)
+    readAt        DateTime?
+    createdAt     DateTime         @default(now())
+
+    @@index([userEmail, isRead])
+    @@index([userEmail, createdAt])
+    @@map("notifications")
+}
+
+model AuditLog {
+    id         String   @id @default(uuid())
+    actorEmail String?
+    actorRole  Role?
+    action     String
+    entity     String
+    entityId   String?
+    metadata   Json?
+    createdAt  DateTime @default(now())
+
+    @@index([entity, entityId])
+    @@index([createdAt])
+    @@map("audit_logs")
 }
 
 model Payment {
@@ -26,6 +89,11 @@ model Payment {
     amount             Float
     paymentGatewayData Json?
     paymentStatus      PaymentStatus @default(UNPAID)
+    stripeSessionId    String?       @unique
+    paymentIntentId    String?
+    refundId           String?
+    paidAt             DateTime?
+    refundedAt         DateTime?
     createdAt          DateTime      @default(now())
     updatedAt          DateTime      @updatedAt
 

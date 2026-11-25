@@ -2,11 +2,13 @@ model Schedule {
     id             String           @id @default(uuid())
     startDateTime  DateTime
     endDateTime    DateTime
+    isDeleted      Boolean          @default(false)
     createdAt      DateTime         @default(now())
     updatedAt      DateTime         @updatedAt
     doctorSchedule DoctorSchedule[]
     appointment    Appointment[]
 
+    @@index([startDateTime])
     @@map("schedules")
 }
 
@@ -20,5 +22,6 @@ model DoctorSchedule {
     doctor     Doctor   @relation(fields: [doctorId], references: [id])
 
     @@id([scheduleId, doctorId])
+    @@index([doctorId, isBooked])
     @@map("doctor_schedules")
 }
