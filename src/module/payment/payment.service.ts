@@ -19,7 +19,19 @@ const STRIPE_MIN_EXPIRY_MS = 31 * 60 * 1000;
  * This is the same Checkout + webhook flow the project already had (it was commented out);
  * only the safety around it (ownership, amount from DB, idempotency) is new.
  */
-const createCheckoutSession = async (appointmentId: string, user: TUserJwtPayload) => {
+/**
+ * Where Stripe sends the patient back. The frontend passes its own origin; it is accepted only if it
+ * is in the CLIENT_URL allowlist (or CLIENT_URL is not configured yet), otherwise CLIENT_URL is used.
+ */
+const resolveReturnOrigin = (requested?: string) => {
+  if (requested && /^https?:\/\/[a-z0-9.-]+(:\d+)?$/i.test(requested)) {
+    const origin = requested.replace(/\/$/, "");
+    if (config.client_urls.includes(origin) || !config.client_url_configured) return origin;
+  }
+  return config.client_url;
+};
+
+const createCheckoutSession = async (appointmentId: string, user: TUserJwtPayload, returnOrigin?: string) => {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, isDeleted: false, patient: { email: user.email } },
     include: { doctor: true, payment: true, patient: true, schedule: true },
@@ -59,8 +71,8 @@ const createCheckoutSession = async (appointmentId: string, user: TUserJwtPayloa
     metadata: { appointmentId: appointment.id, paymentId: appointment.payment.id },
     mode: "payment",
     expires_at: Math.floor(expiresAt.getTime() / 1000),
-    success_url: `${config.client_url}/dashboard/payment/success?session_id={CHECKOUT_SESSION_ID}&appointmentId=${appointment.id}`,
-    cancel_url: `${config.client_url}/dashboard/my-appointments/${appointment.id}?payment=cancelled`,
+    success_url: `${resolveReturnOrigin(returnOrigin)}/dashboard/payment/success?session_id={CHECKOUT_SESSION_ID}&appointmentId=${appointment.id}`,
+    cancel_url: `${resolveReturnOrigin(returnOrigin)}/dashboard/my-appointments/${appointment.id}?payment=cancelled`,
   });
 
   await prisma.$transaction([

@@ -5,6 +5,7 @@ const id = (label: string) => z.string({ error: `${label} is required` }).trim()
 export const createAppointmentZodSchema = z.object({
   doctorId: id("Doctor id"),
   scheduleId: id("Schedule id"),
+  returnOrigin: z.string().max(200).optional(),
 });
 
 export const updateStatusZodSchema = z.object({

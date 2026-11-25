@@ -189,12 +189,12 @@ const holdSlot = async (payload: { doctorId: string; scheduleId: string }, user:
 };
 
 /** POST /appointment — hold the slot and immediately open a Stripe Checkout session. */
-const createAppointment = async (payload: { doctorId: string; scheduleId: string }, user: TUserJwtPayload) => {
+const createAppointment = async (payload: { doctorId: string; scheduleId: string; returnOrigin?: string }, user: TUserJwtPayload) => {
   const appointment = await holdSlot(payload, user);
   let paymentUrl: string | null = null;
   if (isStripeConfigured()) {
     try {
-      const session = await paymentService.createCheckoutSession(appointment.id, user);
+      const session = await paymentService.createCheckoutSession(appointment.id, user, payload.returnOrigin);
       paymentUrl = session.paymentUrl;
     } catch (err) {
       // The hold stays valid; the patient can retry payment from the booking page.

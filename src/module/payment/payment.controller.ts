@@ -17,7 +17,7 @@ const stripeWebhook = async (req: Request, res: Response, next: NextFunction) =>
 };
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-  const data = await paymentService.createCheckoutSession(req.params.appointmentId, req.user);
+  const data = await paymentService.createCheckoutSession(req.params.appointmentId, req.user, req.body?.returnOrigin);
   sendResponse(res, { statusCode: httpStatus.OK, success: true, message: "Checkout session created", data });
 });
 

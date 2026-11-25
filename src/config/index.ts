@@ -58,6 +58,7 @@ export default {
   database_url: env.DATABASE_URL,
   client_urls: env.CLIENT_URL.split(",").map((u) => u.trim().replace(/\/$/, "")).filter(Boolean),
   client_url: env.CLIENT_URL.split(",")[0].trim().replace(/\/$/, ""),
+  client_url_configured: Boolean(process.env.CLIENT_URL),
   cloudinary: {
     cloudinary_cloud_name: env.CLOUDINARY_CLOUD_NAME,
     cloudinary_api_key: env.CLOUDINARY_API_KEY,
