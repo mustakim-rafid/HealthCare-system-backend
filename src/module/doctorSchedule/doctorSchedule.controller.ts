@@ -16,7 +16,7 @@ const createDoctorSchedule = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMySchedule = catchAsync(async (req: Request, res: Response) => {
-    const filters = pick(req.query, ['startDate', 'endDate', 'isBooked']);
+    const filters = pick(req.query as Record<string, unknown>, ['startDate', 'endDate', 'isBooked', 'upcoming']);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
 
     const user = req.user;
@@ -26,7 +26,8 @@ const getMySchedule = catchAsync(async (req: Request, res: Response) => {
         statusCode: httpStatus.OK,
         success: true,
         message: "My Schedule fetched successfully!",
-        data: result
+        meta: result.meta,
+        data: result.data
     });
 });
 
@@ -45,9 +46,9 @@ const deleteFromDB = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
-    const filters = pick(req.query, ['searchTerm', 'isBooked', 'doctorId']);
+    const filters = pick(req.query as Record<string, unknown>, ['searchTerm', 'isBooked', 'doctorId', 'date', 'upcoming']);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-    const result = await doctorScheduleService.getAllFromDB(filters, options);
+    const result = await doctorScheduleService.getAllFromDB(filters, options, req.user);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
