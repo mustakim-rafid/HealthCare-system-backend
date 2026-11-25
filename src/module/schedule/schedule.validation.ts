@@ -41,4 +41,5 @@ export const createScheduleZodSchema = z.object({
       /^(?:[0-9]|1\d|2[0-3]):[0-5]\d$/,
       "Invalid time format. Expected H:MM or HH:MM (24-hour)"
     ),
+  timezoneOffsetMinutes: z.number().int().min(-14 * 60).max(14 * 60).optional(),
 });

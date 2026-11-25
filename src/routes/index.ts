@@ -11,6 +11,10 @@ import { prescriptionRoutes } from "../module/prescription/prescription.routes";
 import { reviewRoutes } from "../module/review/review.routes";
 import { patientRoutes } from "../module/patient/patient.routes";
 import { MetaRoutes } from "../module/meta/meta.routes";
+import { paymentRoutes } from "../module/payment/payment.routes";
+import { notificationRoutes } from "../module/notification/notification.routes";
+import { searchRoutes } from "../module/search/search.routes";
+import { docsRoutes } from "../docs/docs.routes";
 
 const router = Router();
 
@@ -65,6 +69,22 @@ const moduleRoutes: {
   {
     path: "/meta",
     route: MetaRoutes
+  },
+  {
+    path: "/payment",
+    route: paymentRoutes
+  },
+  {
+    path: "/notification",
+    route: notificationRoutes
+  },
+  {
+    path: "/search",
+    route: searchRoutes
+  },
+  {
+    path: "/docs",
+    route: docsRoutes
   },
 ];
 

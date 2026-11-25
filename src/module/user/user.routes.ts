@@ -5,6 +5,8 @@ import { userInputZodSchema } from "./user.validation";
 import { checkAuth } from "../../middlewares/CheckAuth";
 import { Role } from "@prisma/client";
 import { userZodValidator } from "../../middlewares/userZodValidator";
+import { AppError } from "../../utils/AppError";
+import { authLimiter } from "../../middlewares/rateLimiter";
 
 const router = Router();
 
@@ -13,6 +15,7 @@ router.route("/").get(checkAuth(Role.ADMIN), userController.getAllUsersFromDB);
 router
   .route("/create-patient")
   .post(
+    authLimiter,
     fileUploader.upload.single("file"),
     userZodValidator(userInputZodSchema.patientInputZodSchema),
     userController.createPatient
@@ -48,7 +51,11 @@ router.patch(
     checkAuth(Role.ADMIN, Role.DOCTOR, Role.PATIENT),
     fileUploader.upload.single('file'),
     (req: Request, res: Response, next: NextFunction) => {
-        req.body = JSON.parse(req.body.data)
+        try {
+            req.body = typeof req.body?.data === "string" ? JSON.parse(req.body.data) : (req.body ?? {})
+        } catch {
+            return next(new AppError(400, "Malformed JSON payload"))
+        }
         return userController.updateMyProfie(req, res, next)
     }
 );

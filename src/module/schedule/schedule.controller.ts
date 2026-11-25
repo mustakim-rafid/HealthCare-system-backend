@@ -7,7 +7,7 @@ import { pick } from "../../helper/pick";
 import { paginationParameters } from "../user/user.constants";
 
 const createSchedule = catchAsync(async (req: Request, res: Response) => {
-  const result = await scheduleService.createSchedule(req.body);
+  const result = await scheduleService.createSchedule(req.body, req.user);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     message: "Schedule created successfully",
@@ -35,7 +35,7 @@ const getAllAvailableSchedules = catchAsync(
 
 const deleteScheduleById = catchAsync(
   async (req: Request, res: Response) => {
-    const data = await scheduleService.deleteScheduleById(req.params.id)
+    const data = await scheduleService.deleteScheduleById(req.params.id, req.user)
     sendResponse(res, {
       statusCode: httpStatus.OK,
       message: "Schedule deleted successfully",

@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs"
 import { v2 as cloudinary } from "cloudinary";
 import getEnvs from "../config"
+import { logger } from "../utils/logger";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -14,7 +15,15 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    // Images (profile photos / icons) and PDFs (medical reports) only
+    if (/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.mimetype) || file.mimetype === "application/pdf") cb(null, true);
+    else cb(new Error("Only image or PDF uploads are allowed"));
+  },
+});
 
 const uploadToCloudinary = async (file: Express.Multer.File) => {
 
@@ -35,8 +44,8 @@ const uploadToCloudinary = async (file: Express.Multer.File) => {
     
     return result;
   } catch (error) {
-    fs.unlinkSync(file.path)
-    console.error(error);
+    if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+    logger.error("Cloudinary upload failed", { err: error as Error });
   }
 };
 

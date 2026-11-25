@@ -2,14 +2,20 @@ import { Prisma } from "@prisma/client"
 import { IPaginationParameters, normalizeQueryParams } from "../../helper/normalizeQueryParams"
 import { TUserJwtPayload } from "../../types"
 import { prisma } from "../../utils/prisma"
+import { AppError } from "../../utils/AppError"
+import httpStatus from "http-status"
 
-const getPatientById = async (id: string) => {
-    const patient = await prisma.paitent.findUniqueOrThrow({
+const getPatientById = async (id: string, user: TUserJwtPayload) => {
+    // Doctors may only view patients they have (had) an appointment with
+    const patient = await prisma.paitent.findFirst({
         where: {
-            id
-        }
+            id,
+            isDeleted: false,
+            ...(user.role === "DOCTOR" ? { appointment: { some: { doctor: { email: user.email } } } } : {})
+        },
+        include: { patientHealthData: true, medicalReport: true }
     })
-
+    if (!patient) throw new AppError(httpStatus.NOT_FOUND, "Patient not found")
     return patient
 }
 
@@ -78,7 +84,7 @@ const updatePatient = async (user: TUserJwtPayload, payload: any) => {
             }
         })
 
-        patientHealthData && (await tnx.patientHealthData.upsert({
+        if (patientHealthData) await tnx.patientHealthData.upsert({
             where: {
                 patientId: patient.id
             },
@@ -87,14 +93,14 @@ const updatePatient = async (user: TUserJwtPayload, payload: any) => {
                 ...patientHealthData,
                 patientId: patient.id
             }
-        }))
+        })
 
-        medicalReport && (await tnx.medicalReport.create({
+        if (medicalReport) await tnx.medicalReport.create({
             data: {
                 ...medicalReport,
                 patientId: patient.id
             }
-        }))
+        })
 
         return tnx.paitent.findUniqueOrThrow({
             where: {

@@ -1,51 +1,52 @@
-import { Server } from 'http';
-import app from './app';
-import config from './config';
-import { seedAdmin } from './helper/seedAdmin';
-import { prisma } from './utils/prisma';
+import { Server } from "http";
+import app from "./app";
+import config from "./config";
+import { seedAdmin } from "./helper/seedAdmin";
+import { prisma } from "./utils/prisma";
+import { logger } from "./utils/logger";
+import { startJobs, stopJobs } from "./jobs";
+
+let server: Server | undefined;
+
+const shutdown = (reason: string, code: number) => {
+  logger.info("Shutting down", { reason });
+  stopJobs();
+  const finish = async () => {
+    await prisma.$disconnect().catch(() => undefined);
+    process.exit(code);
+  };
+  if (server) server.close(() => void finish());
+  else void finish();
+  // Force exit if connections do not drain in time
+  setTimeout(() => process.exit(code), 10_000).unref();
+};
+
+process.on("unhandledRejection", (error) => {
+  logger.error("Unhandled promise rejection", { err: error as Error });
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception", { err: error });
+  shutdown("uncaughtException", 1);
+});
+
+process.on("SIGTERM", () => shutdown("SIGTERM", 0));
+process.on("SIGINT", () => shutdown("SIGINT", 0));
 
 async function bootstrap() {
-    // This variable will hold our server instance
-    let server: Server;
+  try {
+    await prisma.$connect();
+    await seedAdmin();
 
-    try {
-        await prisma.$connect();
+    server = app.listen(config.port, () => {
+      logger.info(`Server is running on port ${config.port}`, { env: config.node_env });
+    });
 
-        await seedAdmin()
-
-        // Start the server
-        server = app.listen(config.port, () => {
-            console.log(`🚀 Server is running on http://localhost:${config.port}`);
-        });
-
-        // Function to gracefully shut down the server
-        const exitHandler = () => {
-            if (server) {
-                server.close(() => {
-                    console.log('Server closed gracefully.');
-                    process.exit(1); // Exit with a failure code
-                });
-            } else {
-                process.exit(1);
-            }
-        };
-
-        // Handle unhandled promise rejections
-        process.on('unhandledRejection', (error) => {
-            console.log('Unhandled Rejection is detected, we are closing our server...');
-            if (server) {
-                server.close(() => {
-                    console.log(error);
-                    process.exit(1);
-                });
-            } else {
-                process.exit(1);
-            }
-        });
-    } catch (error) {
-        console.error('Error during server startup:', error);
-        process.exit(1);
-    }
+    if (!config.jobs_disabled) startJobs();
+  } catch (error) {
+    logger.error("Error during server startup", { err: error as Error });
+    process.exit(1);
+  }
 }
 
 bootstrap();

@@ -22,10 +22,13 @@ const getDoctorById = async (id: string) => {
           speciality: true,
         },
       },
+      // Only bookable availability is public: future, unbooked, non-deleted slots
       doctorSchedule: {
+        where: { isBooked: false, schedule: { isDeleted: false, startDateTime: { gt: new Date() } } },
         include: {
           schedule: true,
         },
+        orderBy: { schedule: { startDateTime: "asc" } },
       },
     },
   });
@@ -94,9 +97,11 @@ const getAllDoctors = async (
         },
       },
       doctorSchedule: {
+        where: { isBooked: false, schedule: { isDeleted: false, startDateTime: { gt: new Date() } } },
         include: {
           schedule: true
-        }
+        },
+        orderBy: { schedule: { startDateTime: "asc" } },
       },
       user: {
         select: {
@@ -164,35 +169,20 @@ const updateDoctor = async (
   return result;
 };
 
-const deleteDoctor = async (id: string) => {
-  return await prisma.$transaction(async (tnx) => {
-    const doctor = await tnx.doctor.delete({
-      where: {
-        id
-      }
-    })
-
-    await tnx.user.delete({
-      where: {
-        email: doctor.email
-      }
-    })
-
-    return doctor
-  })
-}
+/**
+ * Doctors are never hard-deleted (appointments, payments and prescriptions must keep their history).
+ * Both endpoints soft-delete: profile flagged, login disabled, free future slots withdrawn.
+ */
+const deleteDoctor = async (id: string) => softDeleteDoctor(id)
 
 const softDeleteDoctor = async (id: string) => {
-  const result = await prisma.doctor.update({
-    where: {
-      id
-    },
-    data: {
-      isDeleted: true
-    }
+  return prisma.$transaction(async (tnx) => {
+    const doctor = await tnx.doctor.update({ where: { id }, data: { isDeleted: true } })
+    await tnx.user.update({ where: { email: doctor.email }, data: { status: "DELETED" } })
+    await tnx.doctorSchedule.deleteMany({ where: { doctorId: id, isBooked: false } })
+    await tnx.auditLog.create({ data: { action: "DOCTOR_DELETED", entity: "Doctor", entityId: id } })
+    return doctor
   })
-
-  return result
 }
 
 const doctorSuggestion = async (patientSymptoms: string) => {
