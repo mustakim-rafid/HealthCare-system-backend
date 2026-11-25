@@ -6,19 +6,20 @@ import { IPaginationParameters, normalizeQueryParams } from "../../helper/normal
 import { TUserJwtPayload } from "../../types";
 import { AppError } from "../../utils/AppError";
 import { audit } from "../../helper/audit";
+import { zonedTimeToUtc } from "../../helper/time";
 
 const SLOT_MINUTES = 30;
 const MAX_DAYS = 62;
 
 /**
  * Admin creates 30-minute slots for every day in [startDate, endDate] between startTime and endTime.
- * Times are interpreted as UTC (the client converts the admin's local time to UTC before sending
- * when `timezoneOffsetMinutes` is provided). Existing identical slots are skipped (idempotent) and
- * past slots are never created.
+ * The dates/times are wall-clock times in the app timezone (APP_TIMEZONE, default Asia/Dhaka) and are
+ * stored as UTC — so "15:00–19:00" entered by the admin is shown as 3–7 PM to everyone.
+ * An explicit `timezoneOffsetMinutes` (Date.getTimezoneOffset() convention) overrides the app timezone.
+ * Existing identical slots are skipped (idempotent) and past slots are never created.
  */
 const createSchedule = async (payload: ISchedulePayload & { timezoneOffsetMinutes?: number }, user?: TUserJwtPayload) => {
   const { startDate, endDate, startTime, endTime } = payload;
-  const offset = Number(payload.timezoneOffsetMinutes ?? 0) * 60 * 1000; // Date.getTimezoneOffset() style
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
   if (eh * 60 + em <= sh * 60 + sm) throw new AppError(httpStatus.BAD_REQUEST, "End time must be after start time");
@@ -26,6 +27,13 @@ const createSchedule = async (payload: ISchedulePayload & { timezoneOffsetMinute
   const toUtcDay = (value: string) => {
     const [y, m, d] = value.split("-").map(Number);
     return Date.UTC(y, m - 1, d);
+  };
+  const toInstant = (day: number, minutesOfDay: number) => {
+    const date = new Date(day);
+    if (payload.timezoneOffsetMinutes !== undefined) {
+      return new Date(day + minutesOfDay * 60_000 + payload.timezoneOffsetMinutes * 60_000);
+    }
+    return zonedTimeToUtc(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), minutesOfDay);
   };
   const dayStart = toUtcDay(startDate);
   const dayEnd = toUtcDay(endDate);
@@ -37,7 +45,7 @@ const createSchedule = async (payload: ISchedulePayload & { timezoneOffsetMinute
   const candidates: { startDateTime: Date; endDateTime: Date }[] = [];
   for (let day = dayStart; day <= dayEnd; day += 86_400_000) {
     for (let m = sh * 60 + sm; m + SLOT_MINUTES <= eh * 60 + em; m += SLOT_MINUTES) {
-      const start = new Date(day + m * 60_000 + offset);
+      const start = toInstant(day, m);
       if (start.getTime() <= now) continue;
       candidates.push({ startDateTime: start, endDateTime: new Date(start.getTime() + SLOT_MINUTES * 60_000) });
     }

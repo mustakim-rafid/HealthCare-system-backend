@@ -1,7 +1,7 @@
 import { AppointmentStatus, PaymentStatus, Prisma, Role } from "@prisma/client";
 import httpStatus from "http-status";
 import { v4 as uuidv4 } from "uuid";
-import { format } from "date-fns";
+import { formatInAppTz } from "../../helper/time";
 import config from "../../config";
 import { prisma } from "../../utils/prisma";
 import { AppError } from "../../utils/AppError";
@@ -22,7 +22,7 @@ import {
   sanitizeSearchTerm,
 } from "./appointment.rules";
 
-const fmt = (d: Date) => format(d, "PPpp") + " UTC";
+const fmt = (d: Date) => formatInAppTz(d);
 
 /** Fields of the patient that a doctor/admin may see. */
 const patientPublicSelect = {

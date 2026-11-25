@@ -10,7 +10,7 @@ import { audit } from "../../helper/audit";
 import { notify, notifyAdmins } from "../notification/notification.service";
 import { TUserJwtPayload } from "../../types";
 import { claimSlot, releaseSlot } from "../appointment/appointment.slots";
-import { format } from "date-fns";
+import { formatInAppTz } from "../../helper/time";
 
 const STRIPE_MIN_EXPIRY_MS = 31 * 60 * 1000;
 
@@ -61,7 +61,7 @@ const createCheckoutSession = async (appointmentId: string, user: TUserJwtPayloa
           currency: config.payment_currency,
           product_data: {
             name: `Consultation with ${appointment.doctor.name}`,
-            description: format(appointment.schedule.startDateTime, "PPpp") + " (UTC)",
+            description: formatInAppTz(appointment.schedule.startDateTime),
           },
           unit_amount: Math.round(appointment.payment.amount * 100),
         },
@@ -160,7 +160,7 @@ const notifyBookingConfirmed = async (appointmentId: string) => {
     include: { doctor: true, patient: true, schedule: true },
   });
   if (!a) return;
-  const when = format(a.schedule.startDateTime, "PPpp") + " UTC";
+  const when = formatInAppTz(a.schedule.startDateTime);
   await notify({
     userEmail: a.patient.email,
     type: "BOOKING_CONFIRMED",

@@ -1,5 +1,5 @@
 import { AppointmentStatus, PaymentStatus } from "@prisma/client";
-import { format } from "date-fns";
+import { formatInAppTz } from "../helper/time";
 import config from "../config";
 import { prisma } from "../utils/prisma";
 import { logger } from "../utils/logger";
@@ -47,7 +47,7 @@ export const sendDueReminders = async (now = new Date()) => {
     const claim = await prisma.appointment.updateMany({ where: { id: a.id, reminderSentAt: null }, data: { reminderSentAt: now } });
     if (claim.count === 0) continue; // another tick/instance already sent it
     const mins = Math.max(1, Math.round((a.schedule.startDateTime.getTime() - now.getTime()) / 60000));
-    const at = format(a.schedule.startDateTime, "p") + " UTC";
+    const at = formatInAppTz(a.schedule.startDateTime, { timeOnly: true });
     await notify({
       userEmail: a.patient.email,
       type: "REMINDER",

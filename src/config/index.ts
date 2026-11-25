@@ -24,6 +24,17 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   PAYMENT_CURRENCY: z.string().default("bdt"),
+  APP_TIMEZONE: z
+    .string()
+    .default("Asia/Dhaka")
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "APP_TIMEZONE must be a valid IANA timezone, e.g. Asia/Dhaka"),
   OPENROUTER_API_KEY: z.string().optional(),
   SUPER_ADMIN_EMAIL: z.string().optional(),
   SUPER_ADMIN_PASSWORD: z.string().optional(),
@@ -71,6 +82,7 @@ export default {
   stripe_secret_key: env.STRIPE_SECRET_KEY,
   stripe_webhook_secret: env.STRIPE_WEBHOOK_SECRET,
   payment_currency: env.PAYMENT_CURRENCY,
+  app_timezone: env.APP_TIMEZONE,
   openrouter_api_key: env.OPENROUTER_API_KEY,
   bcrypt_salt_round: env.BCRYPT_SALT_ROUND,
   super_admin: {
