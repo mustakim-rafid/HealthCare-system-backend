@@ -84,7 +84,7 @@ const updatePatient = async (user: TUserJwtPayload, payload: any) => {
             }
         })
 
-        patientHealthData && (await tnx.patientHealthData.upsert({
+        if (patientHealthData) await tnx.patientHealthData.upsert({
             where: {
                 patientId: patient.id
             },
@@ -93,14 +93,14 @@ const updatePatient = async (user: TUserJwtPayload, payload: any) => {
                 ...patientHealthData,
                 patientId: patient.id
             }
-        }))
+        })
 
-        medicalReport && (await tnx.medicalReport.create({
+        if (medicalReport) await tnx.medicalReport.create({
             data: {
                 ...medicalReport,
                 patientId: patient.id
             }
-        }))
+        })
 
         return tnx.paitent.findUniqueOrThrow({
             where: {
